@@ -2,6 +2,7 @@ package request
 
 import (
 	"errors"
+	"slices"
 	"strings"
 )
 
@@ -11,11 +12,16 @@ type RequestLine struct {
 	HttpVersion   string
 }
 
+const crlf = "\r\n"
+
 func parseRequestLine(lines string) (RequestLine, error) {
-	reqLineString := strings.Split(lines, "\r\n")[0]
+	reqLineString, _, check := strings.Cut(lines, crlf)
+	if !check {
+		return RequestLine{}, errors.New("couldn't find crlf in the request line")
+	}
 	reqLineElems := strings.Split(reqLineString, " ")
 	if len(reqLineElems) != 3 {
-		return RequestLine{}, errors.New("wrong structure of request-line")
+		return RequestLine{}, errors.New("bad structured request-line")
 	}
 	reqMethod, reqTarget, reqHTTPVersion := reqLineElems[0], reqLineElems[1], reqLineElems[2]
 	err := validateRequestLine(reqMethod, reqTarget, reqHTTPVersion)
@@ -62,13 +68,8 @@ func validateVersion(reqVersion string) error {
 	if parts[0] != "HTTP" {
 		return errors.New("wrong http-name")
 	}
-	for i, v := range allowedVersions {
-		if (i == len(allowedVersions)-1) && (parts[1] != v) {
-			return errors.New("wrong http-version-number")
-		}
-		if parts[1] == v {
-			break
-		}
+	if !slices.Contains(allowedVersions, parts[1]) {
+		return errors.New("wrong http-version-number")
 	}
 	return nil
 }
