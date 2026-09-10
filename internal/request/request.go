@@ -21,40 +21,40 @@ const (
 )
 
 type Request struct {
-	Status      status
+	status      status
 	RequestLine RequestLine
 }
 
 func RequestFromReader(reader io.Reader) (*Request, error) {
-	r := &Request{Status: intialized}
+	r := &Request{status: intialized}
 	buffer := make([]byte, bufferSize)
-	readInd, sizeT := 0, bufferSize
-	for r.Status != done {
-		n, err := reader.Read(buffer[readInd:cap(buffer)])
-		readInd += n
-		if err != nil && !errors.Is(err, io.EOF) {
-			return nil, err
+	readInd := 0
+	for r.status != done {
+		if readInd >= len(buffer) {
+			buffer = slices.Grow(buffer, len(buffer))
+			buffer = buffer[:cap(buffer)]
 		}
-		if errors.Is(err, io.EOF) {
-			r.Status = done
-			break
+		read, readErr := reader.Read(buffer[readInd:cap(buffer)])
+		readInd += read
+		if readErr != nil && !errors.Is(readErr, io.EOF) {
+			return nil, readErr
 		}
-		_, err = r.parse(buffer)
+		consumed, err := r.parse(buffer)
 		if err != nil {
 			return nil, err
 		}
-		if n == 0 {
-			buffer = slices.Grow(buffer, sizeT)
-			sizeT *= 2
-			buffer = buffer[:cap(buffer)]
+		copy(buffer, buffer[consumed:])
+		readInd -= consumed
+		if errors.Is(readErr, io.EOF) {
+			r.status = done
+			break
 		}
-
 	}
 	return r, nil
 }
 
 func (r *Request) parse(data []byte) (int, error) {
-	switch r.Status {
+	switch r.status {
 	case intialized:
 		rq, no, err := parseRequestLine(data)
 		if err != nil {
@@ -62,7 +62,7 @@ func (r *Request) parse(data []byte) (int, error) {
 		}
 		if no != 0 {
 			r.RequestLine = rq
-			r.Status = done
+			r.status = done
 			return no, nil
 		}
 		return 0, nil

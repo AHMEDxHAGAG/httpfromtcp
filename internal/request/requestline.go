@@ -1,6 +1,7 @@
 package request
 
 import (
+	"bytes"
 	"errors"
 	"slices"
 	"strings"
@@ -13,12 +14,11 @@ type RequestLine struct {
 }
 
 func parseRequestLine(buffer []byte) (rqline RequestLine, noOfBytes int, err error) {
-	lines := string(buffer)
-	reqLineString, _, check := strings.Cut(lines, crlf)
-	if !check {
+	if !bytes.Contains(buffer, []byte(crlf)) {
 		return RequestLine{}, 0, nil
 	}
-	reqLineElems := strings.Split(reqLineString, " ")
+	reqLineBytes, _, _ := bytes.Cut(buffer, []byte(crlf))
+	reqLineElems := strings.Split(string(reqLineBytes), " ")
 	if len(reqLineElems) != 3 {
 		return RequestLine{}, 0, errors.New("bad structured request-line")
 	}
@@ -32,7 +32,7 @@ func parseRequestLine(buffer []byte) (rqline RequestLine, noOfBytes int, err err
 		Method:        reqMethod,
 		RequestTarget: reqTarget,
 		HttpVersion:   reqHTTPVersionNumber,
-	}, len([]byte(reqLineString)), nil
+	}, len(reqLineBytes) + 2, nil
 }
 
 func validateRequestLine(reqMethod, reqTarget, reqHTTPVersion string) error {
