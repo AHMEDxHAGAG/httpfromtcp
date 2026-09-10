@@ -14,26 +14,27 @@ type RequestLine struct {
 
 const crlf = "\r\n"
 
-func parseRequestLine(lines string) (RequestLine, error) {
+func parseRequestLine(buffer []byte) (rqline RequestLine, noOfBytes int, err error) {
+	lines := string(buffer)
 	reqLineString, _, check := strings.Cut(lines, crlf)
 	if !check {
-		return RequestLine{}, errors.New("couldn't find crlf in the request line")
+		return RequestLine{}, 0, nil
 	}
 	reqLineElems := strings.Split(reqLineString, " ")
 	if len(reqLineElems) != 3 {
-		return RequestLine{}, errors.New("bad structured request-line")
+		return RequestLine{}, 0, errors.New("bad structured request-line")
 	}
 	reqMethod, reqTarget, reqHTTPVersion := reqLineElems[0], reqLineElems[1], reqLineElems[2]
-	err := validateRequestLine(reqMethod, reqTarget, reqHTTPVersion)
+	err = validateRequestLine(reqMethod, reqTarget, reqHTTPVersion)
 	if err != nil {
-		return RequestLine{}, err
+		return RequestLine{}, 0, err
 	}
 	reqHTTPVersionNumber := strings.Split(reqHTTPVersion, "/")[1]
 	return RequestLine{
 		Method:        reqMethod,
 		RequestTarget: reqTarget,
 		HttpVersion:   reqHTTPVersionNumber,
-	}, nil
+	}, len([]byte(reqLineString)), nil
 }
 
 func validateRequestLine(reqMethod, reqTarget, reqHTTPVersion string) error {
