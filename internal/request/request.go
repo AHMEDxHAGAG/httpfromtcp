@@ -15,7 +15,10 @@ const (
 	done
 )
 
-const bufferSize = 8
+const (
+	bufferSize = 8
+	crlf       = "\r\n"
+)
 
 type Request struct {
 	Status      status
@@ -26,7 +29,7 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 	r := &Request{Status: intialized}
 	buffer := make([]byte, bufferSize)
 	readInd, sizeT := 0, bufferSize
-	for {
+	for r.Status != done {
 		n, err := reader.Read(buffer[readInd:cap(buffer)])
 		readInd += n
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -39,9 +42,6 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		_, err = r.parse(buffer)
 		if err != nil {
 			return nil, err
-		}
-		if r.Status == done {
-			break
 		}
 		if n == 0 {
 			buffer = slices.Grow(buffer, sizeT)

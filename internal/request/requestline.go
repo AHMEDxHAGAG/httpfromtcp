@@ -12,8 +12,6 @@ type RequestLine struct {
 	HttpVersion   string
 }
 
-const crlf = "\r\n"
-
 func parseRequestLine(buffer []byte) (rqline RequestLine, noOfBytes int, err error) {
 	lines := string(buffer)
 	reqLineString, _, check := strings.Cut(lines, crlf)
