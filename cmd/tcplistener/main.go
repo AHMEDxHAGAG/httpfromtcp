@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net"
+
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/request"
 )
 
 func main() {
@@ -21,10 +23,15 @@ func main() {
 			return
 		}
 		fmt.Println("Connection Started")
-		ch := getLinesChannel(con)
-		for str := range ch {
-			fmt.Println(str)
+		req, err := request.RequestFromReader(con)
+		if err != nil {
+			fmt.Printf("Error: %s\n", err)
+			return
 		}
+		fmt.Printf("Request line:\n- Method: %s\n- Target: %s\n- Version: %s\n",
+			req.RequestLine.Method,
+			req.RequestLine.RequestTarget,
+			req.RequestLine.HttpVersion)
 		fmt.Println("Connection Closed")
 	}
 }

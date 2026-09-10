@@ -16,7 +16,7 @@ const (
 )
 
 const (
-	bufferSize = 8
+	bufferSize = 4096
 	crlf       = "\r\n"
 )
 
