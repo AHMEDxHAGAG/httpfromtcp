@@ -103,4 +103,15 @@ func TestHeaders(t *testing.T) {
 	require.Error(t, err)
 	assert.Equal(t, 0, n)
 	assert.False(t, done)
+
+	// Test: Multiple Values Header
+	headers = NewHeaders()
+	headers["set-person"] = "prime-loves-zig"
+	data = []byte("Set-Person: lane-loves-go\r\n\r\n")
+	n, done, err = headers.Parse(data)
+	require.NoError(t, err)
+	require.NotNil(t, headers)
+	assert.Equal(t, "prime-loves-zig, lane-loves-go", headers["set-person"])
+	assert.Equal(t, len(data)-2, n)
+	assert.False(t, done)
 }

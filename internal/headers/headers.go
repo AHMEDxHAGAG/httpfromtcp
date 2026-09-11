@@ -28,6 +28,9 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	if err != nil {
 		return 0, false, err
 	}
+	if elem, ok := h[key]; ok {
+		value = elem + ", " + value
+	}
 	h[key] = value
 	return len(data) - 2, false, nil
 }
