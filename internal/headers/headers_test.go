@@ -80,7 +80,7 @@ func TestHeaders(t *testing.T) {
 	// Test: Valid 2 headers with existing headers
 	headers = NewHeaders()
 	headers["host"] = "localhost:42069"
-	data = []byte("Content-Type: application/json\r\n")
+	data = []byte("Content-Type: application/json\r\n\r\n")
 	n, done, err = headers.Parse(data)
 	require.NoError(t, err)
 	require.NotNil(t, headers)

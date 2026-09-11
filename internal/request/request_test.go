@@ -4,6 +4,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/headers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -80,11 +81,49 @@ func TestRequestParse(t *testing.T) {
 	assert.Equal(t, "curl/7.81.0", r.Headers["user-agent"])
 	assert.Equal(t, "*/*", r.Headers["accept"])
 
+	// Test: Empty Headers
+	reader = &chunkReader{
+		data:            "GET / HTTP/1.1\r\n\r\n",
+		numBytesPerRead: 3,
+	}
+	r, err = RequestFromReader(reader)
+	assert.Equal(t, headers.NewHeaders(), r.Headers)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+
+	// Test: Duplicate Headers
+	reader = &chunkReader{
+		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\nHost: 127.0.0.1\r\n\r\n",
+		numBytesPerRead: 3,
+	}
+	r, err = RequestFromReader(reader)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, "localhost:42069, 127.0.0.1", r.Headers["host"])
+
+	// Test: Case Insensitive Headers
+	reader = &chunkReader{
+		data:            "GET / HTTP/1.1\r\nHOST: localhost:42069\r\n\r\n",
+		numBytesPerRead: 3,
+	}
+	r, err = RequestFromReader(reader)
+	require.NoError(t, err)
+	require.NotNil(t, r)
+	assert.Equal(t, "localhost:42069", r.Headers["host"])
+
 	// Test: Malformed Header
 	reader = &chunkReader{
 		data:            "GET / HTTP/1.1\r\nHost localhost:42069\r\n\r\n",
 		numBytesPerRead: 3,
 	}
-	r, err = RequestFromReader(reader)
+	_, err = RequestFromReader(reader)
+	require.Error(t, err)
+
+	// Test: Missing End of Headers
+	reader = &chunkReader{
+		data:            "GET / HTTP/1.1\r\nHost localhost:42069\r\n",
+		numBytesPerRead: 3,
+	}
+	_, err = RequestFromReader(reader)
 	require.Error(t, err)
 }

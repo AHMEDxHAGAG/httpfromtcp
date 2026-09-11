@@ -25,7 +25,6 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 		return 2, true, nil
 	}
 	data = data[:ind]
-	// fmt.Println(string(data))
 	key, value, err := parseFieldLine(data)
 	if err != nil {
 		return 0, false, err
