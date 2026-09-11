@@ -62,15 +62,30 @@ func TestHeaders(t *testing.T) {
 	assert.Equal(t, 0, n)
 	assert.False(t, done)
 
-	// TODO: Work in the Code Till it Pass This Test
-	// // Test: Valid 2 headers with existing headers
-	// headers = NewHeaders()
-	// data = slices.Concat([]byte("Content-Type: application/json\r\n"), []byte("Host: localhost:42069\r\n\r\n"))
-	// n, done, err = headers.Parse(data)
-	// require.NoError(t, err)
-	// require.NotNil(t, headers)
-	// assert.Equal(t, "application/json", headers["Content-Type"])
-	// assert.Equal(t, "localhost:42069", headers["Host"])
-	// assert.Equal(t, len(data)-2, n)
-	// assert.False(t, done)
+	// Test: Add Valid done Tests
+	headers = NewHeaders()
+	data = []byte("\r\n")
+	n, done, err = headers.Parse(data)
+	require.NoError(t, err)
+	assert.Equal(t, 0, n)
+	assert.True(t, done)
+
+	headers = NewHeaders()
+	data = []byte("\r\nHost: localhost:42069\r\n")
+	n, done, err = headers.Parse(data)
+	require.NoError(t, err)
+	assert.Equal(t, 0, n)
+	assert.True(t, done)
+
+	// Test: Valid 2 headers with existing headers
+	headers = NewHeaders()
+	headers["Host"] = "localhost:42069"
+	data = []byte("Content-Type: application/json\r\n")
+	n, done, err = headers.Parse(data)
+	require.NoError(t, err)
+	require.NotNil(t, headers)
+	assert.Equal(t, "application/json", headers["Content-Type"])
+	assert.Equal(t, "localhost:42069", headers["Host"])
+	assert.Equal(t, len(data)-2, n)
+	assert.False(t, done)
 }

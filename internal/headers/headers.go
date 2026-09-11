@@ -35,7 +35,7 @@ func parseFieldLine(data []byte) (key, value string, err error) {
 	head := string(data)
 	fieldName, fieldValue, colon := strings.Cut(head, ":")
 	if !colon {
-		return "", "", fmt.Errorf("error: colon is found in the field-name")
+		return "", "", fmt.Errorf("error: colon isn't found in the field-name")
 	}
 	if strings.Contains(fieldName, " ") {
 		return "", "", fmt.Errorf("error: whitespace is found in the field-name")
