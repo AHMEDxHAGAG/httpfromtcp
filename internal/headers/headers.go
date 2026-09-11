@@ -21,7 +21,7 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 		return 0, false, nil
 	}
 	if ind == 0 {
-		return len(data) - 2, true, nil
+		return 2, true, nil
 	}
 	key, value, err := parseFieldLine(data)
 	if err != nil {

@@ -67,14 +67,14 @@ func TestHeaders(t *testing.T) {
 	data = []byte("\r\n")
 	n, done, err = headers.Parse(data)
 	require.NoError(t, err)
-	assert.Equal(t, 0, n)
+	assert.Equal(t, 2, n)
 	assert.True(t, done)
 
 	headers = NewHeaders()
 	data = []byte("\r\nHost: localhost:42069\r\n")
 	n, done, err = headers.Parse(data)
 	require.NoError(t, err)
-	assert.Equal(t, 0, n)
+	assert.Equal(t, 2, n)
 	assert.True(t, done)
 
 	// Test: Valid 2 headers with existing headers
