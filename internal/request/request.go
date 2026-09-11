@@ -3,14 +3,18 @@ package request
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"slices"
+
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/headers"
 )
 
 type status int
 
 const (
 	intialized status = iota
+	parsingHeaders
 	done
 )
 
@@ -22,6 +26,7 @@ const (
 type Request struct {
 	status      status
 	RequestLine RequestLine
+	Headers     headers.Headers
 }
 
 func RequestFromReader(reader io.Reader) (*Request, error) {
@@ -50,4 +55,35 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		}
 	}
 	return r, nil
+}
+
+func (r *Request) parse(data []byte) (int, error) {
+	switch r.status {
+	case intialized:
+		rq, n, err := parseRequestLine(data)
+		if err != nil {
+			return 0, err
+		}
+		if n != 0 {
+			r.RequestLine = rq
+			r.status = parsingHeaders
+			r.Headers = headers.NewHeaders()
+			return n, nil
+		}
+		return 0, nil
+	case parsingHeaders:
+		n, ok, err := r.Headers.Parse(data)
+		if err != nil {
+			return 0, err
+		}
+		if ok {
+			r.status = done
+			return n, nil
+		}
+		return 0, nil
+	case done:
+		return 0, fmt.Errorf("error: trying to read data in a done state")
+	default:
+		return 0, fmt.Errorf("error: unknown state")
+	}
 }
