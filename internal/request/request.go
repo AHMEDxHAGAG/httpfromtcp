@@ -80,7 +80,7 @@ func (r *Request) parse(data []byte) (int, error) {
 			r.status = done
 			return n, nil
 		}
-		return 0, nil
+		return n, nil
 	case done:
 		return 0, fmt.Errorf("error: trying to read data in a done state")
 	default:

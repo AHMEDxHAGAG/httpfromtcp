@@ -24,6 +24,8 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	if ind == 0 {
 		return 2, true, nil
 	}
+	data = data[:ind]
+	// fmt.Println(string(data))
 	key, value, err := parseFieldLine(data)
 	if err != nil {
 		return 0, false, err
@@ -32,7 +34,7 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 		value = elem + ", " + value
 	}
 	h[key] = value
-	return len(data) - 2, false, nil
+	return len(data) + 2, false, nil
 }
 
 func parseFieldLine(data []byte) (key, value string, err error) {
