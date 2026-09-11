@@ -4,6 +4,7 @@ package headers
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -40,6 +41,22 @@ func parseFieldLine(data []byte) (key, value string, err error) {
 	if strings.Contains(fieldName, " ") {
 		return "", "", fmt.Errorf("error: whitespace is found in the field-name")
 	}
+	fieldName = strings.ToLower(fieldName)
+	if err := validateFieldName(fieldName); err != nil {
+		return "", "", err
+	}
 	fieldValue = strings.TrimSpace(fieldValue)
 	return fieldName, fieldValue, nil
+}
+
+func validateFieldName(fieldName string) error {
+	for _, char := range fieldName {
+		if (char >= 'a' && char <= 'z') ||
+			(char >= '0' && char <= '9') ||
+			slices.Contains([]rune{'!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~'}, char) {
+			continue
+		}
+		return fmt.Errorf("invalid character in the header key")
+	}
+	return nil
 }
