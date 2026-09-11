@@ -3,7 +3,6 @@ package request
 
 import (
 	"errors"
-	"fmt"
 	"io"
 	"slices"
 )
@@ -51,24 +50,4 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		}
 	}
 	return r, nil
-}
-
-func (r *Request) parse(data []byte) (int, error) {
-	switch r.status {
-	case intialized:
-		rq, no, err := parseRequestLine(data)
-		if err != nil {
-			return 0, err
-		}
-		if no != 0 {
-			r.RequestLine = rq
-			r.status = done
-			return no, nil
-		}
-		return 0, nil
-	case done:
-		return 0, fmt.Errorf("error: trying to read data in a done state")
-	default:
-		return 0, fmt.Errorf("error: unknown state")
-	}
 }
