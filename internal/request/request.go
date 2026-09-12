@@ -43,18 +43,18 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		if readErr != nil && !errors.Is(readErr, io.EOF) {
 			return nil, readErr
 		}
-		for {
-			consumed, err := r.parse(buffer)
+		for r.status != done {
+			consumed, err := r.parse(buffer[:readInd])
 			if err != nil {
 				return nil, err
 			}
-			copy(buffer, buffer[consumed:])
+			copy(buffer, buffer[consumed:readInd])
 			readInd -= consumed
 			if errors.Is(readErr, io.EOF) {
 				r.status = done
 				break
 			}
-			if consumed == 0 || (r.status == done) {
+			if consumed == 0 {
 				break
 			}
 		}

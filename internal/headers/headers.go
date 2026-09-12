@@ -24,13 +24,12 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	if ind == 0 {
 		return 2, true, nil
 	}
-	data = data[:ind]
-	key, value, err := parseFieldLine(data)
+	key, value, err := parseFieldLine(data[:ind])
 	if err != nil {
 		return 0, false, err
 	}
 	h[key] = handleDuplicate(h, key, value)
-	return len(data) + 2, false, nil
+	return ind + 2, false, nil
 }
 
 func parseFieldLine(data []byte) (key, value string, err error) {
