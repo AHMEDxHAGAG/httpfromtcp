@@ -29,10 +29,7 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	if err != nil {
 		return 0, false, err
 	}
-	if elem, ok := h[key]; ok {
-		value = elem + ", " + value
-	}
-	h[key] = value
+	h[key] = handleDuplicate(h, key, value)
 	return len(data) + 2, false, nil
 }
 
@@ -63,4 +60,17 @@ func validateFieldName(fieldName string) error {
 		return fmt.Errorf("invalid character in the header key")
 	}
 	return nil
+}
+
+func handleDuplicate(h Headers, key, value string) string {
+	if _, ok := h[key]; !ok {
+		return value
+	}
+	valuesList := strings.Split(h[key], ", ")
+	if found := slices.Contains(valuesList, value); found {
+		value = h[key]
+	} else {
+		value = fmt.Sprintf("%s, %s", h[key], value)
+	}
+	return value
 }
