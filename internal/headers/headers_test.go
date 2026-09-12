@@ -89,6 +89,17 @@ func TestHeaders(t *testing.T) {
 	assert.Equal(t, len(data)-2, n)
 	assert.False(t, done)
 
+	// Test: Duplicate Headers
+	headers = NewHeaders()
+	headers["host"] = "localhost:42069"
+	data = []byte("host: localhost:42069\r\n\r\n")
+	n, done, err = headers.Parse(data)
+	require.NoError(t, err)
+	require.NotNil(t, headers)
+	assert.Equal(t, "localhost:42069", headers["host"])
+	assert.Equal(t, len(data)-2, n)
+	assert.False(t, done)
+
 	// Test: Header with invalid Characters
 	headers = NewHeaders()
 	data = []byte("H@st: localhost:42069\r\n\r\n")

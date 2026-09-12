@@ -43,15 +43,20 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		if readErr != nil && !errors.Is(readErr, io.EOF) {
 			return nil, readErr
 		}
-		consumed, err := r.parse(buffer)
-		if err != nil {
-			return nil, err
-		}
-		copy(buffer, buffer[consumed:])
-		readInd -= consumed
-		if errors.Is(readErr, io.EOF) {
-			r.status = done
-			break
+		for {
+			consumed, err := r.parse(buffer)
+			if err != nil {
+				return nil, err
+			}
+			copy(buffer, buffer[consumed:])
+			readInd -= consumed
+			if errors.Is(readErr, io.EOF) {
+				r.status = done
+				break
+			}
+			if consumed == 0 || (r.status == done) {
+				break
+			}
 		}
 	}
 	return r, nil
