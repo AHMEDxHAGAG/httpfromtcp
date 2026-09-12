@@ -13,7 +13,7 @@ import (
 type status int
 
 const (
-	intialized status = iota
+	initialized status = iota
 	parsingHeaders
 	done
 )
@@ -30,7 +30,7 @@ type Request struct {
 }
 
 func RequestFromReader(reader io.Reader) (*Request, error) {
-	r := &Request{status: intialized}
+	r := &Request{status: initialized}
 	buffer := make([]byte, bufferSize)
 	readInd := 0
 	for r.status != done {
@@ -56,9 +56,8 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		}
 		copy(buffer, buffer[totalCons:readInd])
 		readInd -= totalCons
-		if errors.Is(readErr, io.EOF) {
-			r.status = done
-			break
+		if errors.Is(readErr, io.EOF) && r.status != done {
+			return nil, readErr
 		}
 	}
 	return r, nil
@@ -66,7 +65,7 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 
 func (r *Request) parse(data []byte) (int, error) {
 	switch r.status {
-	case intialized:
+	case initialized:
 		rq, n, err := parseRequestLine(data)
 		if err != nil {
 			return 0, err

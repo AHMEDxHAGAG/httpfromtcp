@@ -121,7 +121,7 @@ func TestRequestParse(t *testing.T) {
 
 	// Test: Missing End of Headers
 	reader = &chunkReader{
-		data:            "GET / HTTP/1.1\r\nHost localhost:42069\r\n",
+		data:            "GET / HTTP/1.1\r\nHost: localhost:42069\r\n",
 		numBytesPerRead: 3,
 	}
 	_, err = RequestFromReader(reader)

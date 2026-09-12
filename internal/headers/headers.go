@@ -50,6 +50,9 @@ func parseFieldLine(data []byte) (key, value string, err error) {
 }
 
 func validateFieldName(fieldName string) error {
+	if fieldName == "" {
+		return fmt.Errorf("wrong fieldline structure: empty fieldname")
+	}
 	for _, char := range fieldName {
 		if (char >= 'a' && char <= 'z') ||
 			(char >= '0' && char <= '9') ||

@@ -52,8 +52,12 @@ func validateRequestLine(reqMethod, reqTarget, reqHTTPVersion string) error {
 }
 
 func validateTarget(reqTarget string) error {
-	if !strings.Contains(reqTarget, "/") {
+	ind := strings.Index(reqTarget, "/")
+	if ind == -1 {
 		return errors.New("wrong target must contain '/'")
+	}
+	if ind != 0 {
+		return errors.New("wrong target fomrat must be '/' + resource")
 	}
 	return nil
 }
