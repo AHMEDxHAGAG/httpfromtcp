@@ -8,8 +8,13 @@ import (
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/request"
 )
 
+const (
+	address = "127.0.0.1:42069"
+	network = "tcp"
+)
+
 func main() {
-	listener, err := net.Listen("tcp", "127.0.0.1:42069")
+	listener, err := net.Listen(network, address)
 	if err != nil {
 		fmt.Printf("Error: %s\n", err)
 		return
