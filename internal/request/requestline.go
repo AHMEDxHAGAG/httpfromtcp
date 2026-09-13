@@ -32,7 +32,7 @@ func parseRequestLine(buffer []byte) (rqline RequestLine, noOfBytes int, err err
 		Method:        reqMethod,
 		RequestTarget: reqTarget,
 		HttpVersion:   reqHTTPVersionNumber,
-	}, len(reqLineBytes) + 2, nil
+	}, len(reqLineBytes) + len(crlf), nil
 }
 
 func validateRequestLine(reqMethod, reqTarget, reqHTTPVersion string) error {

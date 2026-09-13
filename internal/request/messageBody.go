@@ -7,7 +7,7 @@ import (
 
 func parseMessageBody(r *Request, data []byte) (int, error) {
 	contentLenString, _ := r.Headers.Get("Content-Length")
-	contentLen, err := strconv.Atoi(contentLenString)
+	contentLen, err := getContentLen(contentLenString)
 	if err != nil {
 		return 0, err
 	}
@@ -19,4 +19,14 @@ func parseMessageBody(r *Request, data []byte) (int, error) {
 		return 0, fmt.Errorf("Length Of The Body Is Larger Than The Content Length")
 	}
 	return len(data), nil
+}
+
+func getContentLen(s string) (int, error) {
+	for _, char := range s {
+		if !(char >= '0' && char <= '9') {
+			return 0, fmt.Errorf("content-length value is non numeric")
+		}
+	}
+	no, err := strconv.Atoi(s)
+	return no, err
 }
