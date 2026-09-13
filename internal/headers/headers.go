@@ -16,6 +16,11 @@ func NewHeaders() Headers {
 	return make(Headers)
 }
 
+func (h Headers) Get(key string) (string, bool) {
+	value, avaliable := h[strings.ToLower(key)]
+	return value, avaliable
+}
+
 func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	ind := bytes.Index(data, []byte(crlf))
 	if ind == -1 {

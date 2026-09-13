@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"slices"
+	"strconv"
 
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/headers"
 )
@@ -85,8 +86,9 @@ func (r *Request) parse(data []byte) (int, error) {
 			return 0, err
 		}
 		if ok {
-			if _, exists := r.Headers["content-type"]; exists {
+			if val, exists := r.Headers.Get("Content-Length"); exists && (val != "0") {
 				r.status = parsingMessageBody
+				r.Body = make([]byte, 0)
 			} else {
 				r.status = done
 			}
@@ -94,7 +96,20 @@ func (r *Request) parse(data []byte) (int, error) {
 		}
 		return n, nil
 	case parsingMessageBody:
-		// TODO
+		contentLenString, _ := r.Headers.Get("Content-Length")
+		contentLen, err := strconv.Atoi(contentLenString)
+		if err != nil {
+			return 0, err
+		}
+		r.Body = append(r.Body, data...)
+		if len(r.Body) == contentLen {
+			r.status = done
+			r.Body = r.Body[:contentLen]
+		}
+		if len(r.Body) > contentLen {
+			return 0, fmt.Errorf("Length Of The Body Is Larger Than The Content Length")
+		}
+		return len(data), nil
 	case done:
 		return 0, fmt.Errorf("error: trying to read data in a done state")
 	default:
