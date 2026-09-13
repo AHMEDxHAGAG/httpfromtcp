@@ -54,4 +54,5 @@ func perConnection(con io.ReadCloser) {
 	for key, val := range req.Headers {
 		fmt.Printf("- %s: %s\n", key, val)
 	}
+	fmt.Printf("Body:\n%s\n", req.Body)
 }
