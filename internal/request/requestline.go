@@ -78,6 +78,9 @@ func validateVersion(reqVersion string) error {
 }
 
 func validateMethod(reqMethod string) error {
+	if reqMethod == "" {
+		return errors.New("Found Empty Method")
+	}
 	for _, char := range reqMethod {
 		if char >= 'A' && char <= 'Z' {
 			continue

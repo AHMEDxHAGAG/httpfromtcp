@@ -45,6 +45,9 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 		if readErr != nil && !errors.Is(readErr, io.EOF) {
 			return nil, readErr
 		}
+		if read == 0 {
+			return nil, fmt.Errorf("Lost Connection")
+		}
 		totalCons := 0
 		for r.status != done {
 			consumed, err := r.parse(buffer[totalCons:readInd])

@@ -11,12 +11,12 @@ func parseMessageBody(r *Request, data []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	if (len(r.Body) + len(data)) > contentLen {
+		return 0, fmt.Errorf("Length Of The Body Is Larger Than The Content Length")
+	}
 	r.Body = append(r.Body, data...)
 	if len(r.Body) == contentLen {
 		r.status = done
-	}
-	if len(r.Body) > contentLen {
-		return 0, fmt.Errorf("Length Of The Body Is Larger Than The Content Length")
 	}
 	return len(data), nil
 }
