@@ -13,8 +13,9 @@ import (
 type status int
 
 const (
-	initialized status = iota
-	parsingHeaders
+	parsingRequestLine status = iota
+	parsingFieldLines
+	parsingMessageBody
 	done
 )
 
@@ -27,10 +28,11 @@ type Request struct {
 	status      status
 	RequestLine RequestLine
 	Headers     headers.Headers
+	Body        []byte
 }
 
 func RequestFromReader(reader io.Reader) (*Request, error) {
-	r := &Request{status: initialized}
+	r := &Request{status: parsingRequestLine}
 	buffer := make([]byte, bufferSize)
 	readInd := 0
 	for r.status != done {
@@ -65,28 +67,34 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 
 func (r *Request) parse(data []byte) (int, error) {
 	switch r.status {
-	case initialized:
+	case parsingRequestLine:
 		rq, n, err := parseRequestLine(data)
 		if err != nil {
 			return 0, err
 		}
 		if n != 0 {
 			r.RequestLine = rq
-			r.status = parsingHeaders
+			r.status = parsingFieldLines
 			r.Headers = headers.NewHeaders()
 			return n, nil
 		}
 		return 0, nil
-	case parsingHeaders:
+	case parsingFieldLines:
 		n, ok, err := r.Headers.Parse(data)
 		if err != nil {
 			return 0, err
 		}
 		if ok {
-			r.status = done
+			if _, exists := r.Headers["content-type"]; exists {
+				r.status = parsingMessageBody
+			} else {
+				r.status = done
+			}
 			return n, nil
 		}
 		return n, nil
+	case parsingMessageBody:
+		// TODO
 	case done:
 		return 0, fmt.Errorf("error: trying to read data in a done state")
 	default:
