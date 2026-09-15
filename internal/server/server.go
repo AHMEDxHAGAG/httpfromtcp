@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"sync/atomic"
 )
 
@@ -20,7 +19,7 @@ const (
 )
 
 func Serve(port int) (*Server, error) {
-	listener, err := net.Listen("tcp", "127.0.0.1:"+strconv.Itoa(port))
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
 	if err != nil {
 		return nil, err
 	}
@@ -50,11 +49,14 @@ func (s *Server) listen() {
 }
 
 func (s *Server) handle(conn net.Conn) {
+	defer func() {
+		_ = conn.Close()
+	}()
 	response := []byte("HTTP/1.1 200 OK" + crlf +
-		"Content-Type: text/plain" + crlf + crlf +
+		"Content-Type: text/plain" + crlf +
 		"Content-Length: 13" + crlf +
+		crlf +
 		"Hello World!\n")
 
 	_, _ = conn.Write(response)
-	_ = conn.Close()
 }
