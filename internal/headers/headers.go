@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-)
 
-const crlf = "\r\n"
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/constants"
+)
 
 type Headers map[string]string
 
@@ -21,20 +21,24 @@ func (h Headers) Get(key string) (string, bool) {
 	return value, avaliable
 }
 
+func (h Headers) Set(key, value string) {
+	h[strings.ToLower(key)] = value
+}
+
 func (h Headers) Parse(data []byte) (n int, done bool, err error) {
-	ind := bytes.Index(data, []byte(crlf))
+	ind := bytes.Index(data, []byte(constants.CRLF))
 	if ind == -1 {
 		return 0, false, nil
 	}
 	if ind == 0 {
-		return len(crlf), true, nil
+		return len(constants.CRLF), true, nil
 	}
 	key, value, err := parseFieldLine(data[:ind])
 	if err != nil {
 		return 0, false, err
 	}
 	h[key] = handleDuplicate(h, key, value)
-	return ind + len(crlf), false, nil
+	return ind + len(constants.CRLF), false, nil
 }
 
 func parseFieldLine(data []byte) (key, value string, err error) {

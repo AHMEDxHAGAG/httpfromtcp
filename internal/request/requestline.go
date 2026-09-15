@@ -5,6 +5,8 @@ import (
 	"errors"
 	"slices"
 	"strings"
+
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/constants"
 )
 
 type RequestLine struct {
@@ -14,10 +16,10 @@ type RequestLine struct {
 }
 
 func parseRequestLine(buffer []byte) (rqline RequestLine, noOfBytes int, err error) {
-	if !bytes.Contains(buffer, []byte(crlf)) {
+	if !bytes.Contains(buffer, []byte(constants.CRLF)) {
 		return RequestLine{}, 0, nil
 	}
-	reqLineBytes, _, _ := bytes.Cut(buffer, []byte(crlf))
+	reqLineBytes, _, _ := bytes.Cut(buffer, []byte(constants.CRLF))
 	reqLineElems := strings.Split(string(reqLineBytes), " ")
 	if len(reqLineElems) != 3 {
 		return RequestLine{}, 0, errors.New("bad structured request-line")
@@ -32,7 +34,7 @@ func parseRequestLine(buffer []byte) (rqline RequestLine, noOfBytes int, err err
 		Method:        reqMethod,
 		RequestTarget: reqTarget,
 		HttpVersion:   reqHTTPVersionNumber,
-	}, len(reqLineBytes) + len(crlf), nil
+	}, len(reqLineBytes) + len(constants.CRLF), nil
 }
 
 func validateRequestLine(reqMethod, reqTarget, reqHTTPVersion string) error {

@@ -2,8 +2,11 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"sync/atomic"
+
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/response"
 )
 
 type Server struct {
@@ -11,15 +14,13 @@ type Server struct {
 	listener net.Listener
 }
 
-const crlf = "\r\n"
-
 const (
 	listening bool = true
 	closed    bool = false
 )
 
 func Serve(port int) (*Server, error) {
-	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return nil, err
 	}
@@ -52,11 +53,12 @@ func (s *Server) handle(conn net.Conn) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	response := []byte("HTTP/1.1 200 OK" + crlf +
-		"Content-Type: text/plain" + crlf +
-		"Content-Length: 13" + crlf +
-		crlf +
-		"Hello World!\n")
-
-	_, _ = conn.Write(response)
+	err := response.WriteStatusLine(conn, 200)
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
+	err = response.WriteHeaders(conn, response.GetDefaultHeaders(0))
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
 }

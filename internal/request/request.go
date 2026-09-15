@@ -21,7 +21,6 @@ const (
 
 const (
 	bufferSize = 4096
-	crlf       = "\r\n"
 )
 
 type Request struct {
