@@ -19,13 +19,18 @@ const (
 	closed    bool = false
 )
 
+func newServer(listener net.Listener) *Server {
+	server := &Server{listener: listener}
+	server.state.Store(listening)
+	return server
+}
+
 func Serve(port int) (*Server, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return nil, err
 	}
-	server := &Server{listener: listener}
-	server.state.Store(listening)
+	server := newServer(listener)
 	go server.listen()
 	return server, nil
 }
