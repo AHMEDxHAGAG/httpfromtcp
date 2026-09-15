@@ -46,7 +46,7 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 			return nil, readErr
 		}
 		if read == 0 {
-			return nil, fmt.Errorf("Lost Connection")
+			return nil, fmt.Errorf("lost connection")
 		}
 		totalCons := 0
 		for r.status != done {
