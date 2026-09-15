@@ -10,16 +10,16 @@ import (
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/headers"
 )
 
-type StatusCode int
+type StatusCode string
 
 const (
-	Success     StatusCode = 200
-	ClientError StatusCode = 400
-	ServerError StatusCode = 500
+	Success     StatusCode = "200"
+	ClientError StatusCode = "400"
+	ServerError StatusCode = "500"
 )
 
 func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
-	statusLine := []byte(fmt.Sprintf("HTTP/1.1 %d ", statusCode))
+	statusLine := []byte("HTTP/1.1 " + statusCode + " ")
 	switch statusCode {
 	case Success:
 		statusLine = append(statusLine, []byte("OK")...)

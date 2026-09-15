@@ -1,11 +1,14 @@
 package main
 
 import (
+	"io"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/request"
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/response"
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/server"
 )
 
@@ -15,7 +18,7 @@ const (
 )
 
 func main() {
-	server, err := server.Serve(port)
+	server, err := server.Serve(ToyHandler, port)
 	if err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
@@ -26,4 +29,25 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 	log.Println("Server gracefully stopped")
+}
+
+func ToyHandler(w io.Writer, req *request.Request) *server.HandlerError {
+	switch req.RequestLine.RequestTarget {
+	case "/yourproblem":
+		return &server.HandlerError{
+			StatusCode: string(response.ClientError),
+			Msg:        "Your problem is not my problem\n",
+		}
+	case "/myproblem":
+		return &server.HandlerError{
+			StatusCode: string(response.ServerError),
+			Msg:        "Woopsie, my bad\n",
+		}
+	default:
+		_, err := w.Write([]byte("All good, frfr\n"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		return nil
+	}
 }

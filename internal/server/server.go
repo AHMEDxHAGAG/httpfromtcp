@@ -1,17 +1,20 @@
 package server
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net"
 	"sync/atomic"
 
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/request"
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/response"
 )
 
 type Server struct {
 	state    atomic.Bool
 	listener net.Listener
+	handler  Handler
 }
 
 const (
@@ -19,18 +22,18 @@ const (
 	closed    bool = false
 )
 
-func newServer(listener net.Listener) *Server {
-	server := &Server{listener: listener}
+func newServer(listener net.Listener, handler Handler) *Server {
+	server := &Server{listener: listener, handler: handler}
 	server.state.Store(listening)
 	return server
 }
 
-func Serve(port int) (*Server, error) {
+func Serve(handler Handler, port int) (*Server, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return nil, err
 	}
-	server := newServer(listener)
+	server := newServer(listener, handler)
 	go server.listen()
 	return server, nil
 }
@@ -48,7 +51,8 @@ func (s *Server) listen() {
 	for s.state.Load() {
 		con, err := s.listener.Accept()
 		if err != nil {
-			fmt.Printf("error: %s", err)
+			log.Fatal(err)
+			return
 		}
 		go s.handle(con)
 	}
@@ -58,12 +62,36 @@ func (s *Server) handle(conn net.Conn) {
 	defer func() {
 		_ = conn.Close()
 	}()
-	err := response.WriteStatusLine(conn, 200)
+	req, err := request.RequestFromReader(conn)
 	if err != nil {
-		log.Fatalf("%s", err)
+		_, err = conn.Write([]byte(err.Error()))
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		return
+
 	}
-	err = response.WriteHeaders(conn, response.GetDefaultHeaders(0))
+	buffer := bytes.NewBuffer([]byte{})
+	handlererr := s.handler(buffer, req)
+	if handlererr != nil && handlererr.StatusCode != string(response.Success) {
+		_, err = conn.Write([]byte(handlererr.Text()))
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+	if err = response.WriteStatusLine(conn, response.Success); err != nil {
+		log.Fatal(err)
+		return
+	}
+	if err = response.WriteHeaders(conn, response.GetDefaultHeaders(buffer.Len())); err != nil {
+		log.Fatal(err)
+		return
+	}
+	_, err = conn.Write(buffer.Bytes())
 	if err != nil {
-		log.Fatalf("%s", err)
+		log.Fatal(err)
+		return
 	}
 }
