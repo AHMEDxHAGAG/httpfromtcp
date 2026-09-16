@@ -40,6 +40,9 @@ func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 	}
 	statusLine = append(statusLine, constants.CRLF...)
 	_, err := w.w.Write(statusLine)
+	if err == nil {
+		w.writerState = writingFieldLines
+	}
 	return err
 }
 
@@ -54,6 +57,9 @@ func (w *Writer) WriteHeaders(headers headers.Headers) error {
 	}
 	headersBuffer = append(headersBuffer, []byte(constants.CRLF)...)
 	_, err := w.w.Write(headersBuffer)
+	if err == nil {
+		w.writerState = writingMessageBody
+	}
 	return err
 }
 

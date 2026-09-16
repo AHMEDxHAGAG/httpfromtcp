@@ -66,7 +66,7 @@ func (s *Server) handle(conn io.ReadWriteCloser) {
 	}()
 	req, err := request.RequestFromReader(conn)
 	if err != nil {
-
+		log.Fatalf(err.Error())
 	}
 	writer := response.NewWriter(conn)
 	s.handler(writer, req)
