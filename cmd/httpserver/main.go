@@ -35,12 +35,12 @@ func ToyHandler(w io.Writer, req *request.Request) *server.HandlerError {
 	switch req.RequestLine.RequestTarget {
 	case "/yourproblem":
 		return &server.HandlerError{
-			StatusCode: string(response.ClientError),
+			StatusCode: response.ClientError,
 			Msg:        "Your problem is not my problem\n",
 		}
 	case "/myproblem":
 		return &server.HandlerError{
-			StatusCode: string(response.ServerError),
+			StatusCode: response.ServerError,
 			Msg:        "Woopsie, my bad\n",
 		}
 	default:

@@ -74,24 +74,35 @@ func (s *Server) handle(conn net.Conn) {
 	}
 	buffer := bytes.NewBuffer([]byte{})
 	handlererr := s.handler(buffer, req)
-	if handlererr != nil && handlererr.StatusCode != string(response.Success) {
+
+	if handlererr != nil {
+		if err = response.WriteStatusLine(conn, response.StatusCode(handlererr.StatusCode)); err != nil {
+			log.Fatal(err)
+			return
+		}
+		if err = response.WriteHeaders(conn, response.GetDefaultHeaders(len(handlererr.Msg))); err != nil {
+			log.Fatal(err)
+			return
+		}
 		_, err = conn.Write([]byte(handlererr.Text()))
 		if err != nil {
 			log.Fatal(err)
 		}
-		return
-	}
-	if err = response.WriteStatusLine(conn, response.Success); err != nil {
-		log.Fatal(err)
-		return
-	}
-	if err = response.WriteHeaders(conn, response.GetDefaultHeaders(buffer.Len())); err != nil {
-		log.Fatal(err)
-		return
-	}
-	_, err = conn.Write(buffer.Bytes())
-	if err != nil {
-		log.Fatal(err)
-		return
+
+	} else {
+		if err = response.WriteStatusLine(conn, response.StatusCode(response.Success)); err != nil {
+			log.Fatal(err)
+			return
+		}
+		if err = response.WriteHeaders(conn, response.GetDefaultHeaders(buffer.Len())); err != nil {
+			log.Fatal(err)
+			return
+		}
+		_, err = conn.Write(buffer.Bytes())
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+
 	}
 }

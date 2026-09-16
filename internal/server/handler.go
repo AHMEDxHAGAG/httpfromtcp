@@ -4,12 +4,13 @@ import (
 	"io"
 
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/request"
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/response"
 )
 
 type Handler func(w io.Writer, req *request.Request) *HandlerError
 
 type HandlerError struct {
-	StatusCode string
+	StatusCode response.StatusCode
 	Msg        string
 }
 
