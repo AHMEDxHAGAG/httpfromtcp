@@ -64,10 +64,15 @@ func (s *Server) handle(conn io.ReadWriteCloser) {
 	defer func() {
 		_ = conn.Close()
 	}()
+	writer := response.NewWriter(conn)
 	req, err := request.RequestFromReader(conn)
 	if err != nil {
-		log.Fatalf(err.Error())
+		body := []byte(err.Error())
+		_ = writer.WriteStatusLine(response.ClientError)
+		header := response.GetDefaultHeaders(len(body))
+		_ = writer.WriteHeaders(header)
+		_, _ = writer.WriteBody(body)
+		return
 	}
-	writer := response.NewWriter(conn)
 	s.handler(writer, req)
 }

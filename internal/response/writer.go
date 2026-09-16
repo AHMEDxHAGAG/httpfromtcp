@@ -11,9 +11,9 @@ import (
 type writerState int
 
 const (
-	writingStatusLine  writerState = iota
-	writingFieldLines  writerState = iota
-	writingMessageBody writerState = iota
+	writingStatusLine writerState = iota
+	writingFieldLines
+	writingMessageBody
 )
 
 type Writer struct {

@@ -31,11 +31,12 @@ func main() {
 }
 
 func ToyHandler(res *response.Writer, req *request.Request) {
+	var body []byte
 	switch req.RequestLine.RequestTarget {
 
 	case "/yourproblem":
 		_ = res.WriteStatusLine(response.ClientError)
-		body := []byte(`<html>
+		body = []byte(`<html>
   <head>
     <title>400 Bad Request</title>
   </head>
@@ -44,14 +45,10 @@ func ToyHandler(res *response.Writer, req *request.Request) {
     <p>Your request honestly kinda sucked.</p>
   </body>
 </html>`)
-		header := response.GetDefaultHeaders(len(body))
-		header.Set("Content-Type", "text/html")
-		_ = res.WriteHeaders(header)
-		_, _ = res.WriteBody([]byte(body))
 
 	case "/myproblem":
 		_ = res.WriteStatusLine(response.ServerError)
-		body := []byte(`<html>
+		body = []byte(`<html>
   <head>
     <title>500 Internal Server Error</title>
   </head>
@@ -60,15 +57,11 @@ func ToyHandler(res *response.Writer, req *request.Request) {
     <p>Okay, you know what? This one is on me.</p>
   </body>
 </html>`)
-		header := response.GetDefaultHeaders(len(body))
-		header.Set("Content-Type", "text/html")
-		_ = res.WriteHeaders(header)
-		_, _ = res.WriteBody([]byte(body))
 
 	default:
 		_ = res.WriteStatusLine(response.Success)
 
-		body := []byte(`<html>
+		body = []byte(`<html>
   <head>
     <title>200 OK</title>
   </head>
@@ -77,10 +70,10 @@ func ToyHandler(res *response.Writer, req *request.Request) {
     <p>Your request was an absolute banger.</p>
   </body>
 </html>`)
-		header := response.GetDefaultHeaders(len(body))
-		header.Set("Content-Type", "text/html")
-		_ = res.WriteHeaders(header)
-		_, _ = res.WriteBody([]byte(body))
 
 	}
+	header := response.GetDefaultHeaders(len(body))
+	header.Set("Content-Type", "text/html")
+	_ = res.WriteHeaders(header)
+	_, _ = res.WriteBody(body)
 }
