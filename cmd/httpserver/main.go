@@ -40,7 +40,7 @@ func Handler(res *response.Writer, req *request.Request) {
 		subHandler500(res, req)
 	default:
 		if strings.HasPrefix(req.RequestLine.RequestTarget, "/httpbin") {
-			ProxyHandler(res, req, strings.TrimPrefix((strings.TrimPrefix(req.RequestLine.RequestTarget, "/httpbin")), "/"))
+			ProxyHandler(res, req)
 		} else {
 			subHandler200(res, req)
 		}
@@ -103,17 +103,18 @@ func subHandler500(res *response.Writer, req *request.Request) {
 	_, _ = res.WriteBody(body)
 }
 
-func ProxyHandler(res *response.Writer, req *request.Request, resource string) {
+func ProxyHandler(res *response.Writer, req *request.Request) {
 	_ = res.WriteStatusLine(response.Success)
 	header := response.GetDefaultHeaders(0)
 	header.UnSet("Content-Length")
 	header.Set("Transfer-Encoding", "chunked")
 	_ = res.WriteHeaders(header)
-	resp, err := http.Get("https://httpbingo.org/" + resource)
+	resp, err := http.Get("https://httpbingo.org/" + strings.TrimPrefix(req.RequestLine.RequestTarget, "/httpbin/"))
 	if err != nil {
 		response.WriteServerError(res, err)
 	}
-	buffer := make([]byte, 36)
+	defer resp.Body.Close()
+	buffer := make([]byte, 1024)
 	for {
 		n, err := resp.Body.Read(buffer)
 		res.WriteChunkedBody(buffer[:n])
