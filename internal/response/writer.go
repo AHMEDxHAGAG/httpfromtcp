@@ -25,7 +25,12 @@ func NewWriter(w io.Writer) *Writer {
 	return &Writer{w: w, writerState: writingStatusLine}
 }
 
-func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
+func (w *Writer) WriteStatusLine(statusCode StatusCode) (err error) {
+	defer func() {
+		if err == nil {
+			w.writerState = writingFieldLines
+		}
+	}()
 	if w.writerState != writingStatusLine {
 		return fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingStatusLine)
 	}
@@ -39,14 +44,16 @@ func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 		statusLine = append(statusLine, []byte("Internal Server Error")...)
 	}
 	statusLine = append(statusLine, constants.CRLF...)
-	_, err := w.w.Write(statusLine)
-	if err == nil {
-		w.writerState = writingFieldLines
-	}
+	_, err = w.w.Write(statusLine)
 	return err
 }
 
-func (w *Writer) WriteHeaders(headers headers.Headers) error {
+func (w *Writer) WriteHeaders(headers headers.Headers) (err error) {
+	defer func() {
+		if err == nil {
+			w.writerState = writingMessageBody
+		}
+	}()
 	if w.writerState != writingFieldLines {
 		return fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingFieldLines)
 	}
@@ -56,18 +63,15 @@ func (w *Writer) WriteHeaders(headers headers.Headers) error {
 		headersBuffer = append(headersBuffer, []byte(header)...)
 	}
 	headersBuffer = append(headersBuffer, []byte(constants.CRLF)...)
-	_, err := w.w.Write(headersBuffer)
-	if err == nil {
-		w.writerState = writingMessageBody
-	}
+	_, err = w.w.Write(headersBuffer)
 	return err
 }
 
-func (w *Writer) WriteBody(p []byte) (int, error) {
+func (w *Writer) WriteBody(p []byte) (n int, err error) {
 	if w.writerState != writingMessageBody {
 		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingMessageBody)
 	}
-	n, err := w.w.Write(p)
+	n, err = w.w.Write(p)
 	if err != nil {
 		return 0, err
 	}

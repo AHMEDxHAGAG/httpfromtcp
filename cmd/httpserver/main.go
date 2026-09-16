@@ -17,7 +17,7 @@ const (
 )
 
 func main() {
-	server, err := server.Serve(ToyHandler, port)
+	server, err := server.Serve(Handler, port)
 	if err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
@@ -30,13 +30,20 @@ func main() {
 	log.Println("Server gracefully stopped")
 }
 
-func ToyHandler(res *response.Writer, req *request.Request) {
-	var body []byte
+func Handler(res *response.Writer, req *request.Request) {
 	switch req.RequestLine.RequestTarget {
-
 	case "/yourproblem":
-		_ = res.WriteStatusLine(response.ClientError)
-		body = []byte(`<html>
+		subHandler400(res, req)
+	case "/myproblem":
+		subHandler500(res, req)
+	default:
+		subHandler200(res, req)
+	}
+}
+
+func subHandler400(res *response.Writer, req *request.Request) {
+	_ = res.WriteStatusLine(response.ClientError)
+	body := []byte(`<html>
   <head>
     <title>400 Bad Request</title>
   </head>
@@ -46,22 +53,17 @@ func ToyHandler(res *response.Writer, req *request.Request) {
   </body>
 </html>`)
 
-	case "/myproblem":
-		_ = res.WriteStatusLine(response.ServerError)
-		body = []byte(`<html>
-  <head>
-    <title>500 Internal Server Error</title>
-  </head>
-  <body>
-    <h1>Internal Server Error</h1>
-    <p>Okay, you know what? This one is on me.</p>
-  </body>
-</html>`)
+	header := response.GetDefaultHeaders(len(body))
+	header.Set("Content-Type", "text/html")
+	_ = res.WriteHeaders(header)
+	_, _ = res.WriteBody(body)
 
-	default:
-		_ = res.WriteStatusLine(response.Success)
+}
 
-		body = []byte(`<html>
+func subHandler200(res *response.Writer, req *request.Request) {
+	_ = res.WriteStatusLine(response.Success)
+
+	body := []byte(`<html>
   <head>
     <title>200 OK</title>
   </head>
@@ -71,7 +73,24 @@ func ToyHandler(res *response.Writer, req *request.Request) {
   </body>
 </html>`)
 
-	}
+	header := response.GetDefaultHeaders(len(body))
+	header.Set("Content-Type", "text/html")
+	_ = res.WriteHeaders(header)
+	_, _ = res.WriteBody(body)
+}
+
+func subHandler500(res *response.Writer, req *request.Request) {
+	_ = res.WriteStatusLine(response.ServerError)
+	body := []byte(`<html>
+  <head>
+    <title>500 Internal Server Error</title>
+  </head>
+  <body>
+    <h1>Internal Server Error</h1>
+    <p>Okay, you know what? This one is on me.</p>
+  </body>
+</html>`)
+
 	header := response.GetDefaultHeaders(len(body))
 	header.Set("Content-Type", "text/html")
 	_ = res.WriteHeaders(header)
