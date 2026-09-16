@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"sync/atomic"
@@ -76,33 +77,39 @@ func (s *Server) handle(conn net.Conn) {
 	handlererr := s.handler(buffer, req)
 
 	if handlererr != nil {
-		if err = response.WriteStatusLine(conn, response.StatusCode(handlererr.StatusCode)); err != nil {
-			log.Fatal(err)
-			return
-		}
-		if err = response.WriteHeaders(conn, response.GetDefaultHeaders(len(handlererr.Msg))); err != nil {
-			log.Fatal(err)
-			return
-		}
-		_, err = conn.Write([]byte(handlererr.Text()))
-		if err != nil {
-			log.Fatal(err)
-		}
-
+		writeErrHandlerOutput(conn, handlererr)
 	} else {
-		if err = response.WriteStatusLine(conn, response.StatusCode(response.Success)); err != nil {
-			log.Fatal(err)
-			return
-		}
-		if err = response.WriteHeaders(conn, response.GetDefaultHeaders(buffer.Len())); err != nil {
-			log.Fatal(err)
-			return
-		}
-		_, err = conn.Write(buffer.Bytes())
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
+		writeNormalHandlerOutput(conn, buffer)
+	}
+}
 
+func writeErrHandlerOutput(w io.Writer, handlererr *HandlerError) {
+	if err := response.WriteStatusLine(w, response.StatusCode(handlererr.StatusCode)); err != nil {
+		log.Fatal(err)
+		return
+	}
+	if err := response.WriteHeaders(w, response.GetDefaultHeaders(len(handlererr.Msg))); err != nil {
+		log.Fatal(err)
+		return
+	}
+	_, err := w.Write([]byte(handlererr.Text()))
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func writeNormalHandlerOutput(w io.Writer, b *bytes.Buffer) {
+	if err := response.WriteStatusLine(w, response.StatusCode(response.Success)); err != nil {
+		log.Fatal(err)
+		return
+	}
+	if err := response.WriteHeaders(w, response.GetDefaultHeaders(b.Len())); err != nil {
+		log.Fatal(err)
+		return
+	}
+	_, err := w.Write(b.Bytes())
+	if err != nil {
+		log.Fatal(err)
+		return
 	}
 }
