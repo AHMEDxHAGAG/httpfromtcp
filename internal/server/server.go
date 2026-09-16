@@ -3,11 +3,13 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"sync/atomic"
 
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/request"
+	"github.com/AHMEDxHAGAG/httpfromtcp/internal/response"
 )
 
 type Server struct {
@@ -57,19 +59,18 @@ func (s *Server) listen() {
 	}
 }
 
-func (s *Server) handle(conn net.Conn) {
+func (s *Server) handle(conn io.ReadWriteCloser) {
 	defer func() {
 		_ = conn.Close()
 	}()
 	req, err := request.RequestFromReader(conn)
 	if err != nil {
-		_, err = conn.Write([]byte(err.Error()))
-		if err != nil {
-			log.Fatal(err)
-			return
+		hErr := &HandlerError{
+			StatusCode: response.ClientError,
+			Msg:        err.Error(),
 		}
+		writeErrHandlerOutput(conn, hErr)
 		return
-
 	}
 	buffer := bytes.NewBuffer([]byte{})
 	handlererr := s.handler(buffer, req)
@@ -77,6 +78,6 @@ func (s *Server) handle(conn net.Conn) {
 	if handlererr != nil {
 		writeErrHandlerOutput(conn, handlererr)
 	} else {
-		writeNormalHandlerOutput(conn, buffer)
+		writeNormalHandlerOutput(conn, buffer, response.Success) // response.Success is a placeholder
 	}
 }

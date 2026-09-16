@@ -17,7 +17,7 @@ type HandlerError struct {
 }
 
 func writeErrHandlerOutput(w io.Writer, handlererr *HandlerError) {
-	if err := response.WriteStatusLine(w, response.StatusCode(handlererr.StatusCode)); err != nil {
+	if err := response.WriteStatusLine(w, handlererr.StatusCode); err != nil {
 		log.Fatal(err)
 		return
 	}
@@ -31,8 +31,8 @@ func writeErrHandlerOutput(w io.Writer, handlererr *HandlerError) {
 	}
 }
 
-func writeNormalHandlerOutput(w io.Writer, b *bytes.Buffer) {
-	if err := response.WriteStatusLine(w, response.StatusCode(response.Success)); err != nil {
+func writeNormalHandlerOutput(w io.Writer, b *bytes.Buffer, resCode response.StatusCode) {
+	if err := response.WriteStatusLine(w, resCode); err != nil {
 		log.Fatal(err)
 		return
 	}
