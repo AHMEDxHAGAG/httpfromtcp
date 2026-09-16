@@ -25,6 +25,10 @@ func (h Headers) Set(key, value string) {
 	h[strings.ToLower(key)] = value
 }
 
+func (h Headers) Add(key, value string) {
+	h[strings.ToLower(key)] = handleDuplicate(h, key, value)
+}
+
 func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	ind := bytes.Index(data, []byte(constants.CRLF))
 	if ind == -1 {
@@ -37,7 +41,7 @@ func (h Headers) Parse(data []byte) (n int, done bool, err error) {
 	if err != nil {
 		return 0, false, err
 	}
-	h[key] = handleDuplicate(h, key, value)
+	h.Add(key, value)
 	return ind + len(constants.CRLF), false, nil
 }
 

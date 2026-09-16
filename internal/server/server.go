@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -11,6 +10,8 @@ import (
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/request"
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/response"
 )
+
+type Handler func(w *response.Writer, req *request.Request)
 
 type Server struct {
 	state    atomic.Bool
@@ -65,19 +66,8 @@ func (s *Server) handle(conn io.ReadWriteCloser) {
 	}()
 	req, err := request.RequestFromReader(conn)
 	if err != nil {
-		hErr := &HandlerError{
-			StatusCode: response.ClientError,
-			Msg:        err.Error(),
-		}
-		writeErrHandlerOutput(conn, hErr)
-		return
-	}
-	buffer := bytes.NewBuffer([]byte{})
-	handlererr := s.handler(buffer, req)
 
-	if handlererr != nil {
-		writeErrHandlerOutput(conn, handlererr)
-	} else {
-		writeNormalHandlerOutput(conn, buffer, response.Success) // response.Success is a placeholder
 	}
+	writer := response.NewWriter(conn)
+	s.handler(writer, req)
 }
