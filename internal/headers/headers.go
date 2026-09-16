@@ -25,6 +25,10 @@ func (h Headers) Set(key, value string) {
 	h[strings.ToLower(key)] = value
 }
 
+func (h Headers) UnSet(key string) {
+	delete(h, strings.ToLower(key))
+}
+
 func (h Headers) Add(key, value string) {
 	h[strings.ToLower(key)] = handleDuplicate(h, key, value)
 }

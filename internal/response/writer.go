@@ -71,9 +71,32 @@ func (w *Writer) WriteBody(p []byte) (n int, err error) {
 	if w.writerState != writingMessageBody {
 		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingMessageBody)
 	}
-	n, err = w.w.Write(p)
-	if err != nil {
-		return 0, err
-	}
+	return w.w.Write(p)
+}
+
+func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
+	line := fmt.Sprintf("%X%s%s%s", len(p), constants.CRLF, p, constants.CRLF)
+	n, _ := w.w.Write([]byte(line))
 	return n, nil
+}
+func (w *Writer) WriteChunkedBodyDone() (int, error) {
+	bodyDoneString := "0" + constants.CRLF + constants.CRLF
+	bodyDone := []byte(bodyDoneString)
+	return w.w.Write(bodyDone)
+}
+
+func WriteClientError(writer *Writer, err error) {
+	body := []byte(err.Error())
+	_ = writer.WriteStatusLine(ClientError)
+	header := GetDefaultHeaders(len(body))
+	_ = writer.WriteHeaders(header)
+	_, _ = writer.WriteBody(body)
+}
+
+func WriteServerError(writer *Writer, err error) {
+	body := []byte(err.Error())
+	_ = writer.WriteStatusLine(ServerError)
+	header := GetDefaultHeaders(len(body))
+	_ = writer.WriteHeaders(header)
+	_, _ = writer.WriteBody(body)
 }

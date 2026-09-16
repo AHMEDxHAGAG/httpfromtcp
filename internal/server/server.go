@@ -67,11 +67,7 @@ func (s *Server) handle(conn io.ReadWriteCloser) {
 	writer := response.NewWriter(conn)
 	req, err := request.RequestFromReader(conn)
 	if err != nil {
-		body := []byte(err.Error())
-		_ = writer.WriteStatusLine(response.ClientError)
-		header := response.GetDefaultHeaders(len(body))
-		_ = writer.WriteHeaders(header)
-		_, _ = writer.WriteBody(body)
+		response.WriteClientError(writer, err)
 		return
 	}
 	s.handler(writer, req)

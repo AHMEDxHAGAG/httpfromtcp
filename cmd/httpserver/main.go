@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/request"
@@ -37,7 +39,11 @@ func Handler(res *response.Writer, req *request.Request) {
 	case "/myproblem":
 		subHandler500(res, req)
 	default:
-		subHandler200(res, req)
+		if strings.HasPrefix(req.RequestLine.RequestTarget, "/httpbin") {
+			ProxyHandler(res, req, strings.TrimPrefix((strings.TrimPrefix(req.RequestLine.RequestTarget, "/httpbin")), "/"))
+		} else {
+			subHandler200(res, req)
+		}
 	}
 }
 
@@ -95,4 +101,25 @@ func subHandler500(res *response.Writer, req *request.Request) {
 	header.Set("Content-Type", "text/html")
 	_ = res.WriteHeaders(header)
 	_, _ = res.WriteBody(body)
+}
+
+func ProxyHandler(res *response.Writer, req *request.Request, resource string) {
+	_ = res.WriteStatusLine(response.Success)
+	header := response.GetDefaultHeaders(0)
+	header.UnSet("Content-Length")
+	header.Set("Transfer-Encoding", "chunked")
+	_ = res.WriteHeaders(header)
+	resp, err := http.Get("https://httpbingo.org/" + resource)
+	if err != nil {
+		response.WriteServerError(res, err)
+	}
+	buffer := make([]byte, 36)
+	for {
+		n, err := resp.Body.Read(buffer)
+		res.WriteChunkedBody(buffer[:n])
+		if err != nil {
+			break
+		}
+	}
+	res.WriteChunkedBodyDone()
 }
