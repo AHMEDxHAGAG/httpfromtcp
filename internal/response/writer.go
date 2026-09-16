@@ -14,7 +14,6 @@ const (
 	writingStatusLine writerState = iota
 	writingFieldLines
 	writingMessageBody
-	finished
 )
 
 type Writer struct {
@@ -69,28 +68,22 @@ func (w *Writer) WriteHeaders(headers headers.Headers) (err error) {
 }
 
 func (w *Writer) WriteBody(p []byte) (n int, err error) {
-	defer func() {
-		if err == nil {
-			w.writerState = finished
-		}
-	}()
 	if w.writerState != writingMessageBody {
 		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingMessageBody)
 	}
 	return w.w.Write(p)
 }
 
-func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
+func (w *Writer) WriteChunkedBody(p []byte) (n int, err error) {
 	if w.writerState != writingMessageBody {
 		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingMessageBody)
 	}
 	line := fmt.Sprintf("%X%s%s%s", len(p), constants.CRLF, p, constants.CRLF)
-	n, _ := w.w.Write([]byte(line))
-	return n, nil
+	return w.w.Write([]byte(line))
 }
-func (w *Writer) WriteChunkedBodyDone() (int, error) {
-	if w.writerState != finished {
-		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, finished)
+func (w *Writer) WriteChunkedBodyDone() (n int, err error) {
+	if w.writerState != writingMessageBody {
+		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingMessageBody)
 	}
 	bodyDoneString := "0" + constants.CRLF + constants.CRLF
 	bodyDone := []byte(bodyDoneString)
