@@ -16,6 +16,7 @@ const (
 	writingFieldLines
 	writingBody
 	writingTrailers
+	finished
 )
 
 type Writer struct {
@@ -53,6 +54,7 @@ func (w *Writer) WriteStatusLine(statusCode StatusCode) (err error) {
 func (w *Writer) WriteHeaders(headers headers.Headers) (err error) {
 	defer func() {
 		if err == nil {
+			w.w.Write([]byte(constants.CRLF))
 			w.writerState = writingBody
 		}
 	}()
@@ -64,7 +66,6 @@ func (w *Writer) WriteHeaders(headers headers.Headers) (err error) {
 		header := fmt.Sprintf("%s: %s"+constants.CRLF, key, value)
 		headersBuffer = append(headersBuffer, []byte(header)...)
 	}
-	headersBuffer = append(headersBuffer, []byte(constants.CRLF)...)
 	_, err = w.w.Write(headersBuffer)
 	return err
 }
@@ -72,7 +73,7 @@ func (w *Writer) WriteHeaders(headers headers.Headers) (err error) {
 func (w *Writer) WriteBody(p []byte) (n int, err error) {
 	defer func() {
 		if err == nil {
-			w.writerState = writingTrailers
+			w.writerState = finished
 		}
 	}()
 	if w.writerState != writingBody {
@@ -97,14 +98,23 @@ func (w *Writer) WriteChunkedBodyDone() (n int, err error) {
 	if w.writerState != writingBody {
 		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingBody)
 	}
-	bodyDoneString := "0" + constants.CRLF + constants.CRLF
+	bodyDoneString := "0" + constants.CRLF
 	bodyDone := []byte(bodyDoneString)
 	return w.w.Write(bodyDone)
 }
 
 func (w *Writer) WriteTrailers(h headers.Headers) (n int, err error) {
+	defer func() {
+		if err == nil {
+			w.w.Write([]byte(constants.CRLF))
+			w.writerState = finished
+		}
+	}()
 	if w.writerState != writingTrailers {
 		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingTrailers)
+	}
+	if _, found := h.Get("Trailers"); !found {
+		return 0, nil
 	}
 	trailersString, _ := h.Get("Trailers")
 	trailers := strings.Split(trailersString, ", ")
