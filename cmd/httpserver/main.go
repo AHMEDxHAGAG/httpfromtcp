@@ -43,6 +43,8 @@ func Handler(res *response.Writer, req *request.Request) {
 		subHandler400(res, req)
 	case "/myproblem":
 		subHandler500(res, req)
+	case "/video":
+		VideoHandler(res, req)
 	default:
 		if strings.HasPrefix(req.RequestLine.RequestTarget, "/httpbin") {
 			ProxyHandler(res, req)
@@ -157,4 +159,17 @@ func ProxyHandler(res *response.Writer, req *request.Request) {
 		response.WriteServerError(res, err)
 		return
 	}
+}
+
+func VideoHandler(res *response.Writer, req *request.Request) {
+	body, err := os.ReadFile("assets/vim.mp4")
+	if err != nil {
+		response.WriteServerError(res, err)
+		return
+	}
+	_ = res.WriteStatusLine(response.Success)
+	header := response.GetDefaultHeaders(len(body))
+	header.Set("Content-Type", "video/mp4")
+	_ = res.WriteHeaders(header)
+	_, _ = res.WriteBody(body)
 }
