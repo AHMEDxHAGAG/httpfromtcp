@@ -118,8 +118,8 @@ func ProxyHandler(res *response.Writer, req *request.Request) {
 	header := response.GetDefaultHeaders(0)
 	header.UnSet("Content-Length")
 	header.Set("Transfer-Encoding", "chunked")
-	header.Add("Trailers", "X-Content-SHA256")
-	header.Add("Trailers", "X-Content-Length")
+	header.Add("Trailer", "X-Content-SHA256")
+	header.Add("Trailer", "X-Content-Length")
 	if err := res.WriteHeaders(header); err != nil {
 		response.WriteServerError(res, err)
 		return
@@ -147,7 +147,7 @@ func ProxyHandler(res *response.Writer, req *request.Request) {
 			return
 		}
 	}
-	if _, err := res.WriteChunkedBodyDone(); err != nil {
+	if _, err := res.WriteChunkedBodyDone(header); err != nil {
 		response.WriteServerError(res, err)
 		return
 	}

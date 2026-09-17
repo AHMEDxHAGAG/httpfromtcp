@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"sync/atomic"
 
@@ -53,7 +52,7 @@ func (s *Server) listen() {
 	for s.state.Load() {
 		con, err := s.listener.Accept()
 		if err != nil {
-			log.Fatal(err)
+			fmt.Errorf("err: %s", err)
 			return
 		}
 		go s.handle(con)

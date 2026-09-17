@@ -86,10 +86,13 @@ func (w *Writer) WriteChunkedBody(p []byte) (n int, err error) {
 	if w.writerState != writingBody {
 		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingBody)
 	}
+	if len(p) == 0 {
+		return w.w.Write([]byte("0" + constants.CRLF))
+	}
 	line := fmt.Sprintf("%X%s%s%s", len(p), constants.CRLF, p, constants.CRLF)
 	return w.w.Write([]byte(line))
 }
-func (w *Writer) WriteChunkedBodyDone() (n int, err error) {
+func (w *Writer) WriteChunkedBodyDone(h headers.Headers) (n int, err error) {
 	defer func() {
 		if err == nil {
 			w.writerState = writingTrailers
@@ -99,6 +102,9 @@ func (w *Writer) WriteChunkedBodyDone() (n int, err error) {
 		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingBody)
 	}
 	bodyDoneString := "0" + constants.CRLF
+	if _, ok := h.Get("Trailer"); !ok {
+		bodyDoneString += constants.CRLF
+	}
 	bodyDone := []byte(bodyDoneString)
 	return w.w.Write(bodyDone)
 }
@@ -113,10 +119,10 @@ func (w *Writer) WriteTrailers(h headers.Headers) (n int, err error) {
 	if w.writerState != writingTrailers {
 		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingTrailers)
 	}
-	if _, found := h.Get("Trailers"); !found {
+	if _, found := h.Get("Trailer"); !found {
 		return 0, nil
 	}
-	trailersString, _ := h.Get("Trailers")
+	trailersString, _ := h.Get("Trailer")
 	trailers := strings.Split(trailersString, ", ")
 	headersBuffer := []byte{}
 	for _, key := range trailers {
