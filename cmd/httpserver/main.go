@@ -1,10 +1,15 @@
 package main
 
 import (
+	"crypto/sha256"
+	"errors"
+	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -104,23 +109,52 @@ func subHandler500(res *response.Writer, req *request.Request) {
 }
 
 func ProxyHandler(res *response.Writer, req *request.Request) {
-	_ = res.WriteStatusLine(response.Success)
+	if err := res.WriteStatusLine(response.Success); err != nil {
+		response.WriteServerError(res, err)
+		return
+	}
 	header := response.GetDefaultHeaders(0)
 	header.UnSet("Content-Length")
 	header.Set("Transfer-Encoding", "chunked")
-	_ = res.WriteHeaders(header)
+	header.Add("Trailers", "X-Content-SHA256")
+	header.Add("Trailers", "X-Content-Length")
+	if err := res.WriteHeaders(header); err != nil {
+		response.WriteServerError(res, err)
+		return
+	}
 	resp, err := http.Get("https://httpbingo.org/" + strings.TrimPrefix(req.RequestLine.RequestTarget, "/httpbin/"))
 	if err != nil {
 		response.WriteServerError(res, err)
+		return
 	}
 	defer resp.Body.Close()
+	body := []byte{}
 	buffer := make([]byte, 1024)
 	for {
-		n, err := resp.Body.Read(buffer)
-		res.WriteChunkedBody(buffer[:n])
-		if err != nil {
-			break
+		n, readerr := resp.Body.Read(buffer)
+		body = append(body, buffer[:n]...)
+		if _, err := res.WriteChunkedBody(buffer[:n]); err != nil {
+			response.WriteServerError(res, err)
+			return
+		}
+		if readerr != nil {
+			if errors.Is(readerr, io.EOF) {
+				break
+			}
+			response.WriteServerError(res, readerr)
+			return
 		}
 	}
-	res.WriteChunkedBodyDone()
+	if _, err := res.WriteChunkedBodyDone(); err != nil {
+		response.WriteServerError(res, err)
+		return
+	}
+	hash := sha256.Sum256(body)
+	header.Set("X-Content-SHA256", fmt.Sprintf("%x", hash))
+	conLen := strconv.Itoa(len(body))
+	header.Set("X-Content-Length", conLen)
+	if _, err := res.WriteTrailers(header); err != nil {
+		response.WriteServerError(res, err)
+		return
+	}
 }

@@ -3,6 +3,7 @@ package response
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/constants"
 	"github.com/AHMEDxHAGAG/httpfromtcp/internal/headers"
@@ -13,7 +14,8 @@ type writerState int
 const (
 	writingStatusLine writerState = iota
 	writingFieldLines
-	writingMessageBody
+	writingBody
+	writingTrailers
 )
 
 type Writer struct {
@@ -51,7 +53,7 @@ func (w *Writer) WriteStatusLine(statusCode StatusCode) (err error) {
 func (w *Writer) WriteHeaders(headers headers.Headers) (err error) {
 	defer func() {
 		if err == nil {
-			w.writerState = writingMessageBody
+			w.writerState = writingBody
 		}
 	}()
 	if w.writerState != writingFieldLines {
@@ -68,26 +70,51 @@ func (w *Writer) WriteHeaders(headers headers.Headers) (err error) {
 }
 
 func (w *Writer) WriteBody(p []byte) (n int, err error) {
-	if w.writerState != writingMessageBody {
-		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingMessageBody)
+	defer func() {
+		if err == nil {
+			w.writerState = writingTrailers
+		}
+	}()
+	if w.writerState != writingBody {
+		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingBody)
 	}
 	return w.w.Write(p)
 }
 
 func (w *Writer) WriteChunkedBody(p []byte) (n int, err error) {
-	if w.writerState != writingMessageBody {
-		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingMessageBody)
+	if w.writerState != writingBody {
+		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingBody)
 	}
 	line := fmt.Sprintf("%X%s%s%s", len(p), constants.CRLF, p, constants.CRLF)
 	return w.w.Write([]byte(line))
 }
 func (w *Writer) WriteChunkedBodyDone() (n int, err error) {
-	if w.writerState != writingMessageBody {
-		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingMessageBody)
+	defer func() {
+		if err == nil {
+			w.writerState = writingTrailers
+		}
+	}()
+	if w.writerState != writingBody {
+		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingBody)
 	}
 	bodyDoneString := "0" + constants.CRLF + constants.CRLF
 	bodyDone := []byte(bodyDoneString)
 	return w.w.Write(bodyDone)
+}
+
+func (w *Writer) WriteTrailers(h headers.Headers) (n int, err error) {
+	if w.writerState != writingTrailers {
+		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingTrailers)
+	}
+	trailersString, _ := h.Get("Trailers")
+	trailers := strings.Split(trailersString, ", ")
+	headersBuffer := []byte{}
+	for _, key := range trailers {
+		value, _ := h.Get(key)
+		header := fmt.Sprintf("%s: %s"+constants.CRLF, key, value)
+		headersBuffer = append(headersBuffer, []byte(header)...)
+	}
+	return w.w.Write(headersBuffer)
 }
 
 func WriteClientError(writer *Writer, err error) {

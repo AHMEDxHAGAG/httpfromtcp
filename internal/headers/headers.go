@@ -82,14 +82,15 @@ func validateFieldName(fieldName string) error {
 }
 
 func handleDuplicate(h Headers, key, value string) string {
-	if _, ok := h[key]; !ok {
+	if _, ok := h.Get(key); !ok {
 		return value
 	}
 	valuesList := strings.Split(h[key], ", ")
 	if found := slices.Contains(valuesList, value); found {
-		value = h[key]
+		value, _ = h.Get(key)
 	} else {
-		value = fmt.Sprintf("%s, %s", h[key], value)
+		currVal, _ := h.Get(key)
+		value = fmt.Sprintf("%s, %s", currVal, value)
 	}
 	return value
 }
