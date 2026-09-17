@@ -134,17 +134,20 @@ func ProxyHandler(res *response.Writer, req *request.Request) {
 	buffer := make([]byte, 1024)
 	for {
 		n, readerr := resp.Body.Read(buffer)
+		if readerr != nil && !errors.Is(readerr, io.EOF) {
+			response.WriteServerError(res, readerr)
+			return
+		}
+		if n == 0 {
+			break
+		}
 		body = append(body, buffer[:n]...)
 		if _, err := res.WriteChunkedBody(buffer[:n]); err != nil {
 			response.WriteServerError(res, err)
 			return
 		}
-		if readerr != nil {
-			if errors.Is(readerr, io.EOF) {
-				break
-			}
-			response.WriteServerError(res, readerr)
-			return
+		if errors.Is(readerr, io.EOF) {
+			break
 		}
 	}
 	if _, err := res.WriteChunkedBodyDone(header); err != nil {

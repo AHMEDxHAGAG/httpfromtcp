@@ -87,7 +87,7 @@ func (w *Writer) WriteChunkedBody(p []byte) (n int, err error) {
 		return 0, fmt.Errorf("unordered writing state your current order is: %d and your request order is: %d", w.writerState, writingBody)
 	}
 	if len(p) == 0 {
-		return w.w.Write([]byte("0" + constants.CRLF))
+		return 0, fmt.Errorf("zero buffer passed")
 	}
 	line := fmt.Sprintf("%X%s%s%s", len(p), constants.CRLF, p, constants.CRLF)
 	return w.w.Write([]byte(line))

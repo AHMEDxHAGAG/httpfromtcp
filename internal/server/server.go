@@ -52,7 +52,7 @@ func (s *Server) listen() {
 	for s.state.Load() {
 		con, err := s.listener.Accept()
 		if err != nil {
-			fmt.Errorf("err: %s", err)
+			fmt.Println(err)
 			return
 		}
 		go s.handle(con)
