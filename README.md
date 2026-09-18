@@ -4,7 +4,8 @@
 
 An HTTP/1.1 server built directly on TCP sockets — no `net/http` for serving. A raw listener accepts connections, an incremental parser turns the byte stream into a request (request-line → headers → `Content-Length` body), and a stateful writer serializes responses (status line / headers / body, plus chunked encoding with trailers). A small demo server wires it together with hardcoded handlers. The logic lives in library-shaped `internal/` packages, with thin `cmd/` binaries on top.
 
-## Proof of work
+## Proof Of Work Videos
+#### Videos May Take Time To Load So Wait Some Seconds
 
 Time-lapse recordings of the build sessions, in order:
 
